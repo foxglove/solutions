@@ -11,7 +11,6 @@ days_to_keep = os.getenv("DAYS_TO_KEEP")
 delete_limit = os.getenv("DELETE_LIMIT")
 
 latest_date = datetime.now(timezone.utc) - timedelta(days=int(days_to_keep))
-print(latest_date)
 
 if(token is None):
     raise ValueError("FOXGLOVE_API_KEY is not set")
