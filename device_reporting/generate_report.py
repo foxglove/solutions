@@ -5,10 +5,36 @@ load_dotenv()
 
 from foxglove_data_platform.client import Client
 
+def get_all_recordings(client, batch_size=2000):
+    """
+    Fetch all recordings using pagination.
+
+    Args:
+        client: Foxglove API client instance
+        batch_size: Number of recordings to fetch per request (default: 1000)
+
+    Returns:
+        List of all recordings
+    """
+    all_recordings = []
+    offset = 0
+
+    while True:
+        batch = client.get_recordings(limit=batch_size, offset=offset)
+        if not batch:  # Stop if no more recordings
+            break
+
+        all_recordings.extend(batch)
+        offset += batch_size
+
+    return all_recordings
+
+# Initialize client
 token = os.getenv("FOXGLOVE_API_KEY")
 client = Client(token=token)
 
-recordings = client.get_recordings()
+# Get all recordings and devices
+recordings = get_all_recordings(client)
 devices = client.get_devices()
 
 # Build the report for devices and recordings per device
