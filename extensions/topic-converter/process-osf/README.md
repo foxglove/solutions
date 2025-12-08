@@ -1,6 +1,6 @@
 # OSF to MCAP in Foxglove
 
-A complete solution for visualizing Ouster OSF (Ouster Sensor Format) lidar data in [Foxglove](https://app.foxglove.dev/), including conversion tools and coordinate transformation extensions.
+A reference implementation for visualizing Ouster OSF (Open Sensor Format) lidar data in [Foxglove](https://app.foxglove.dev/), including conversion tools and coordinate transformation extensions.
 
 ![Example Result](example_result.gif)
 
