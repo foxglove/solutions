@@ -1,6 +1,6 @@
 # Foxglove Solutions
 
-This repository contains official resources, examples, and documentation to help Foxglove customers integrate with our APIs and services.
+This repository contains reference implementations, resources, examples, and documentation to help Foxglove customers integrate with our APIs and services.
 
 ## Contents
 
