@@ -14,11 +14,8 @@ This repository provides a two-part solution:
 
 ## Solution Overview
 
-### Approach 1: OSF to MCAP Conversion ✅
+### OSF to MCAP Conversion ✅
 Convert `.osf` files into `.mcap` format using Python scripts, allowing direct import into Foxglove.
-
-### Approach 2: Data Loader (Future Work)
-Create a [custom data loader](https://docs.foxglove.dev/docs/extensions/guides/create-data-loader) to support OSF files natively in Foxglove.
 
 ### Coordinate Transformation ✅
 A Foxglove extension that converts Ouster lidar scan data from polar coordinates to Cartesian coordinates, making it compatible with Foxglove's 3D panel.
