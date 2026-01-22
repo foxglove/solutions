@@ -1,0 +1,19 @@
+{
+  "name": "foxglove-embed-example",
+  "version": "1.0.0",
+  "description": "Example application demonstrating how to embed Foxglove using the TypeScript SDK",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@foxglove/embed": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}
