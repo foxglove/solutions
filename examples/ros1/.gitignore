@@ -1,0 +1,9 @@
+# ROS bag files
+rosbags/
+
+# Environment variables
+.env
+
+# Log files
+logs/
+*.log

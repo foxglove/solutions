@@ -1,0 +1,18 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "ros2-jazzy-arm"
+  config.vm.hostname = "ros2-dev-playground"
+
+  config.vm.provider "parallels" do |v|
+    v.memory = 8192
+    v.cpus = 4
+  end
+
+  # Network configuration for ROS2
+  config.vm.network "private_network", ip: "192.168.56.10"
+  
+  # Shared folder for development
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+
+  # Port forwarding for Foxglove bridge (default port 8765)
+  config.vm.network "forwarded_port", guest: 8765, host: 8765, id: "foxglove-bridge", auto_correct: true
+end

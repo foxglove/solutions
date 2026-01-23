@@ -1,0 +1,42 @@
+services:
+  ros2:
+    build: .
+    image: ros2demo
+    container_name: ros2
+    hostname: ros2
+    environment:
+      - ROS_DOMAIN_ID=0
+    networks:
+      - ros2net
+    healthcheck:
+      test: ["CMD", "bash", "-c", "source /opt/ros/jazzy/setup.bash && (ros2 daemon start || true) && ros2 daemon status"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    stdin_open: true
+    tty: true
+    command: ["bash"]
+    volumes:
+      - ./ros2_ws:/root/ros2_ws
+
+  foxglove_bridge:
+    build: .
+    image: ros2demo
+    container_name: foxglove_bridge
+    hostname: foxglove_bridge
+    depends_on:
+      ros2:
+        condition: service_healthy
+    environment:
+      - ROS_DOMAIN_ID=0
+    command: ["bash", "-c", "source /opt/ros/jazzy/setup.bash && ros2 launch foxglove_bridge foxglove_bridge_launch.xml"]
+    ports:
+      - "8765:8765"
+    networks:
+      - ros2net
+    restart: unless-stopped
+
+networks:
+  ros2net:
+    driver: bridge

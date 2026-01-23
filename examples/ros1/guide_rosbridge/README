@@ -1,0 +1,73 @@
+# Rosbridge with ROS 1 Demo
+
+Follow along to this tutorial: https://foxglove.dev/blog/using-rosbridge-with-ros1
+
+## Quick Start
+
+This docker-compose setup provides a complete runnable example of Rosbridge with ROS 1.
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- A web browser
+
+### Running the Demo
+
+1. Start all services:
+   ```bash
+   docker-compose up
+   ```
+
+2. Open your web browser and navigate to:
+   ```
+   http://localhost:8080
+   ```
+
+3. You should see:
+   - Connection status showing "successful" (in green)
+   - Messages from `/my_topic` appearing in the list below
+
+### What's Running
+
+The docker-compose setup includes:
+
+- **roscore**: ROS 1 master node (port 11311)
+- **rosbridge**: Rosbridge WebSocket server (port 9090)
+- **topic_publisher**: Automatically publishes messages to `/my_topic` at 1 Hz
+- **web_server**: Serves the demo HTML page (port 8080)
+
+### Manual Testing
+
+You can manually publish messages to `/my_topic` from your host:
+
+```bash
+# Get a shell in a container connected to the ROS network
+docker-compose run --rm --no-deps topic_publisher bash
+
+# Inside the container, source ROS and publish a message
+# Note: Disable history expansion to avoid issues with '!' character
+source /opt/ros/noetic/setup.bash
+set +H
+rostopic pub /my_topic std_msgs/String "data: 'Hello from manual publish!'" -1
+```
+
+Or use a one-liner (history expansion is disabled in non-interactive shells):
+```bash
+docker-compose run --rm --no-deps topic_publisher bash -c "source /opt/ros/noetic/setup.bash && rostopic pub /my_topic std_msgs/String \"data: 'Hello world!'\" -1"
+```
+
+**Note:** If you're running the command interactively in a container and see `bash: !': event not found`, you need to disable history expansion first with `set +H`, or escape the exclamation mark: `'Hello world\!'`
+
+### Stopping the Demo
+
+Press `Ctrl+C` in the terminal, or run:
+```bash
+docker-compose down
+```
+
+## Architecture
+
+- All containers are on the same Docker network (`ros1net`)
+- The `topic_publisher` service waits 5 seconds for roscore to be ready
+- The web page connects to Rosbridge at `ws://localhost:9090`
+- Messages are automatically published to `/my_topic` every second

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+ <head>
+ <meta charset="utf-8" />
+ <title>Rosbridge Demo</title>
+ <style>
+   body {
+     font-family: Arial, sans-serif;
+     max-width: 800px;
+     margin: 50px auto;
+     padding: 20px;
+     background-color: #f5f5f5;
+   }
+   h1 {
+     color: #333;
+   }
+   code {
+     background-color: #e8e8e8;
+     padding: 2px 6px;
+     border-radius: 3px;
+     font-family: 'Courier New', monospace;
+   }
+   #status {
+     color: #d32f2f;
+   }
+   #status.successful {
+     color: #388e3c;
+   }
+   #messages {
+     list-style-type: none;
+     padding: 0;
+   }
+   #messages li {
+     background-color: white;
+     margin: 5px 0;
+     padding: 10px;
+     border-radius: 4px;
+     border-left: 4px solid #2196f3;
+   }
+ </style>
+ </head>
+ <body>
+ <h1>Rosbridge demo</h1>
+ 
+ <p>To see this page update:</p>
+ <ul>
+   <li>Run a Rosbridge connection at <code>ws://localhost:9090</code></li>
+   <li>Start publishing ROS messages to <code>/my_topic</code></li>
+ </ul>
+ 
+ <p>View the full tutorial at <a href="https://foxglove.dev/blog/using-rosbridge-with-ros1" target="_blank">Using Rosbridge with ROS 1</a>.</p>
+ 
+ <hr/>
+ 
+ <p>Connection: <span id="status" style="font-weight: bold;">N/A</span></p>
+ <p><code>/my_topic</code> messages received: <ul id="messages" style="font-weight: bold;"></ul></p>
+ 
+ <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+ 
+ <script type="text/javascript">
+ // Wait for the page to load and roslib to be available
+ window.addEventListener('load', function() {
+   if (typeof ROSLIB === 'undefined') {
+     document.getElementById("status").innerHTML = "Error: roslib.js failed to load";
+     return;
+   }
+   
+   // Create ros object to communicate over your Rosbridge connection
+   const ros = new ROSLIB.Ros({ url: "ws://localhost:9090" });
+   
+   // When the Rosbridge server connects, fill the span with id "status" with "successful"
+   ros.on("connection", () => {
+     const statusEl = document.getElementById("status");
+     statusEl.innerHTML = "successful";
+     statusEl.classList.add("successful");
+   });
+   
+   // When the Rosbridge server experiences an error, fill the "status" span with the returned error
+   ros.on("error", (error) => {
+     const statusEl = document.getElementById("status");
+     statusEl.innerHTML = `errored out (${error})`;
+     statusEl.classList.remove("successful");
+   });
+   
+   // When the Rosbridge server shuts down, fill the "status" span with "closed"
+   ros.on("close", () => {
+     const statusEl = document.getElementById("status");
+     statusEl.innerHTML = "closed";
+     statusEl.classList.remove("successful");
+   });
+   
+   // Create a listener for /my_topic
+   const my_topic_listener = new ROSLIB.Topic({
+     ros,
+     name: "/my_topic",
+     messageType: "std_msgs/String",
+   });
+   
+   // When we receive a message on /my_topic, add its data as a list item to the "messages" ul
+   my_topic_listener.subscribe((message) => {
+     const ul = document.getElementById("messages");
+     const newMessage = document.createElement("li");
+     newMessage.appendChild(document.createTextNode(message.data));
+     ul.appendChild(newMessage);
+   });
+ });
+ </script>
+ </body>
+</html>

@@ -1,0 +1,63 @@
+services:
+  roscore:
+    build: .
+    image: ros1demo
+    container_name: roscore
+    hostname: roscore
+    command: roscore
+    networks:
+      - ros1net
+    ports:
+      - "11311:11311"
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f roscore || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  rosbridge:
+    build: .
+    image: ros1demo
+    container_name: rosbridge
+    depends_on:
+      roscore:
+        condition: service_healthy
+    environment:
+      - ROS_MASTER_URI=http://roscore:11311/
+      - ROS_HOSTNAME=rosbridge
+    command: ["bash", "-c", "source /opt/ros/noetic/setup.bash && sleep 3 && roslaunch rosbridge_server rosbridge_websocket.launch port:=9090"]
+    ports:
+      - "9090:9090"
+    networks:
+      - ros1net
+    restart: unless-stopped
+
+  topic_publisher:
+    build: .
+    image: ros1demo
+    container_name: topic_publisher
+    depends_on:
+      roscore:
+        condition: service_healthy
+    environment:
+      - ROS_MASTER_URI=http://roscore:11311/
+    command: ["bash", "-c", "source /opt/ros/noetic/setup.bash && sleep 5 && rostopic pub /my_topic std_msgs/String 'data: Hello from Docker!' -r 1"]
+    networks:
+      - ros1net
+    restart: unless-stopped
+
+  web_server:
+    image: nginx:alpine
+    container_name: web_server
+    ports:
+      - "8080:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - ros1net
+    restart: unless-stopped
+
+networks:
+  ros1net:
+    driver: bridge

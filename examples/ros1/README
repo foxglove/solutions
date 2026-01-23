@@ -1,0 +1,151 @@
+# ROS1 Docker Setup with Docker Compose
+
+This project sets up a ROS1 environment using Docker Compose with automatic rosbag recording and Foxglove cloud upload.
+
+## Quick Start
+
+1. **Set up Foxglove Agent (optional, for cloud uploads):**
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env and add your Foxglove device token
+   # Get your token from: https://app.foxglove.dev/settings/devices
+   ```
+
+2. **Start all services:**
+   ```bash
+   docker compose up -d
+   ```
+
+3. **View services:**
+   ```bash
+   docker compose ps
+   docker compose logs -f
+   ```
+
+## Services
+
+- **roscore**: ROS master node
+- **chatter_publisher**: Publishes messages to `/chatter` topic
+- **chatter_subscriber**: Subscribes to `/chatter` topic
+- **foxglove_bridge**: Foxglove bridge for live visualization (port 8765)
+- **rosbag_recorder**: Records rosbags in 30-second segments to `./rosbags/`
+- **foxglove_agent**: Automatically uploads rosbags to Foxglove cloud
+
+## Rosbags
+
+Rosbags are automatically recorded every 30 seconds and saved to `./rosbags/` on your local machine. The Foxglove agent is configured to:
+
+- **Watch** the `./rosbags/` directory for new `.bag` files
+- **Automatically upload** all bag files matching the pattern `*.bag` to Foxglove cloud
+- **Index** recordings for efficient upload tracking
+
+The agent uses `WATCH_AUTO_IMPORT_PATTERN=*.bag` to enable automatic uploading of all bag files as soon as they're created.
+
+## Logging
+
+All services are configured with log rotation (max 10MB per file, 5 files per service). Logs are stored in Docker's default location and can be accessed via:
+
+```bash
+# View logs in real-time
+docker compose logs -f
+
+# View logs for a specific service
+docker compose logs -f roscore
+docker compose logs -f foxglove_agent
+```
+
+### Foxglove Agent Log Level
+
+The Foxglove Agent is configured with `RUST_LOG` environment variable to control log verbosity. The current configuration sets it to `foxglove_agent=trace,info` which should enable debug/trace level logging.
+
+**Note:** The agent may have a hardcoded minimum log level filter. If you're not seeing debug messages, the agent might only emit debug logs for specific conditions (like errors or edge cases). To investigate further:
+
+1. Check the agent source code in https://github.com/foxglove/app
+2. Look for how the agent initializes its tracing subscriber
+3. The agent may require a different configuration method than standard `RUST_LOG`
+
+You can override the log level in your `.env` file:
+```bash
+# In .env file
+RUST_LOG=trace  # Most verbose
+RUST_LOG=debug  # Debug level
+RUST_LOG=info   # Info level (default)
+```
+
+### Exporting Logs to Local Files
+
+To save all logs to local files for later review:
+
+```bash
+# Run the export script
+./export-logs.sh
+```
+
+This will create timestamped log files in the `./logs/` directory:
+- Individual service logs: `roscore-YYYYMMDD_HHMMSS.log`, `foxglove_agent-YYYYMMDD_HHMMSS.log`, etc.
+- Combined logs: `all-services-YYYYMMDD_HHMMSS.log`
+
+You can also set up a cron job to automatically export logs periodically:
+```bash
+# Add to crontab (runs every hour)
+0 * * * * cd /path/to/ros1 && ./export-logs.sh
+```
+
+## Original Manual Setup (for reference)
+
+# this was all using ROS1 so just for fun we are going to do it as well. 
+https://foxglove.dev/blog/installing-ros1-on-macos-with-docker 
+
+# make the image
+docker build -t ros1demo .
+
+$ docker network create ros1net
+# main ros container
+$ docker run --rm --name roscore --hostname roscore --network ros1net -it ros1demo roscore
+
+# in another container
+docker run --rm -it --network ros1net --env 'ROS_MASTER_URI=http://roscore:11311/' ros1demo rostopic list
+
+# publish a message on /chatter
+docker run --rm -it --network ros1net --env 'ROS_MASTER_URI=http://roscore:11311/' ros1demo rostopic pub /chatter std_msgs/String 'data: hello' -r 1
+
+# 3rd terminal, verify published messages
+$ docker run --rm -it --network ros1net --env 'ROS_MASTER_URI=http://roscore:11311/' ros1demo rostopic echo /chatter
+
+# 4th container running foxglove_bridge
+$ docker run --rm -it --network ros1net --env 'ROS_MASTER_URI=http://roscore:11311/' -p 8765:8765 ros1demo roslaunch foxglove_bridge foxglove_bridge.launch
+
+-- 
+# This is to now run the turtlesim demo 
+https://foxglove.dev/blog/running-your-first-ros-node
+
+# terminal 1 run roscore 
+docker run --rm --name roscore --hostname roscore --network ros1net -p 11311:11311 -it ros1demo roscore
+
+# terminal 2 run turtlesim with X11 Forwarding GUI
+docker run --rm -it \
+    --network ros1net \
+    --env 'ROS_MASTER_URI=http://roscore:11311/' \
+    --env DISPLAY=$(ipconfig getifaddr en0):0 \
+    ros1demo rosrun turtlesim turtlesim_node
+
+# terminal 3 run turtle_teleop_key
+docker run --rm -it \
+    --network ros1net \
+    --env 'ROS_MASTER_URI=http://roscore:11311/' \
+    --env DISPLAY=$(ipconfig getifaddr en0):0 \
+    ros1demo rosrun turtlesim turtle_teleop_key
+
+# terminal 4 run bridge
+$ docker run --rm -it --network ros1net --env 'ROS_MASTER_URI=http://roscore:11311/' -p 8765:8765 ros1demo roslaunch foxglove_bridge foxglove_bridge.launch
+
+# This worked to get XQuartz with networking support 
+
+# Enable TCP listening
+defaults write org.xquartz.X11 nolisten_tcp -bool false
+defaults write org.xquartz.X11 no_auth -bool false
+
+# Start XQuartz manually with network support
+/Applications/Utilities/XQuartz.app/Contents/MacOS/X11 :0 -listen tcp -auth /tmp/.X11-auth &

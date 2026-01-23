@@ -1,0 +1,16 @@
+https://foxglove.dev/blog/using-protobuf-data-with-the-foxglove-websocket-connection
+
+# generate 
+protoc --python_out=. ExampleMsg.proto
+
+# run
+
+```
+$ python3
+>>> from ExampleMsg_pb2 import ExampleMsg
+>>> ExampleMsg(msg="Hello!", count=42).SerializeToString()
+b'\n\x06Hello!\x10*'
+```
+
+# generate descriptor set 
+protoc --include_imports --descriptor_set_out=ExampleMsg.bin ExampleMsg.proto

@@ -1,0 +1,133 @@
+services:
+  roscore:
+    build: .
+    image: ros1demo
+    container_name: roscore
+    hostname: roscore
+    command: roscore
+    networks:
+      - ros1net
+    ports:
+      - "11311:11311"
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f roscore || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  chatter_publisher:
+    build: .
+    image: ros1demo
+    depends_on:
+      roscore:
+        condition: service_healthy
+    environment:
+      - ROS_MASTER_URI=http://roscore:11311/
+    command: ["rostopic", "pub", "/chatter", "std_msgs/String", "data: hello", "-r", "1"]
+    networks:
+      - ros1net
+    restart: unless-stopped
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  chatter_subscriber:
+    build: .
+    image: ros1demo
+    depends_on:
+      roscore:
+        condition: service_healthy
+    environment:
+      - ROS_MASTER_URI=http://roscore:11311/
+    command: ["rostopic", "echo", "/chatter"]
+    networks:
+      - ros1net
+    restart: unless-stopped
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  foxglove_bridge:
+    build: .
+    image: ros1demo
+    depends_on:
+      roscore:
+        condition: service_healthy
+    environment:
+      - ROS_MASTER_URI=http://roscore:11311/
+    command: ["roslaunch", "foxglove_bridge", "foxglove_bridge.launch"]
+    ports:
+      - "8765:8765"
+    networks:
+      - ros1net
+    restart: unless-stopped
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  rosbag_recorder:
+    build: .
+    image: ros1demo
+    depends_on:
+      roscore:
+        condition: service_healthy
+    environment:
+      - ROS_MASTER_URI=http://roscore:11311/
+    command: ["/bin/bash", "-c", "while true; do rosbag record -a --duration=30 -O /rosbags/rosbag_$$(date +%Y%m%d_%H%M%S).bag; sleep 1; done"]
+    volumes:
+      - ./rosbags:/rosbags
+    networks:
+      - ros1net
+    restart: unless-stopped
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  foxglove_agent:
+    image: us-central1-docker.pkg.dev/foxglove-images/images/agent:1.4.6
+    container_name: foxglove_agent
+    depends_on:
+      - rosbag_recorder
+    environment:
+      - FOXGLOVE_DEVICE_TOKEN=${FOXGLOVE_DEVICE_TOKEN}
+      - DEVICE_NAME=${DEVICE_NAME:-ros1-recorder}
+      - STORAGE_ROOT=/storage
+      - WATCH_INCLUDE_SUFFIXES=.bag
+      - WATCH_AUTO_IMPORT_PATTERN=*.bag
+      - FOXGLOVE_LOG_OUTPUT=text
+    volumes:
+      - foxglove_agent_index:/index
+      - ./rosbags:/storage
+    restart: unless-stopped
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+networks:
+  ros1net:
+    driver: bridge
+
+volumes:
+  foxglove_agent_index:
