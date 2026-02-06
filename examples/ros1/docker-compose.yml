@@ -114,6 +114,7 @@ services:
       - WATCH_INCLUDE_SUFFIXES=.bag
       - WATCH_AUTO_IMPORT_PATTERN=*.bag
       - FOXGLOVE_LOG_OUTPUT=text
+      - FOXGLOVE_LOG=info,agent=trace
     volumes:
       - foxglove_agent_index:/index
       - ./rosbags:/storage
