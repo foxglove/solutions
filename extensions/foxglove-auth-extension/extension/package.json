@@ -1,0 +1,29 @@
+{
+  "name": "auth-demo-panel",
+  "displayName": "Auth Demo Panel",
+  "description": "Foxglove extension panel demonstrating OAuth 2.0 PKCE authentication with a customer backend",
+  "publisher": "demo",
+  "homepage": "",
+  "version": "0.0.10",
+  "license": "MIT",
+  "main": "./dist/extension.js",
+  "keywords": [],
+  "scripts": {
+    "build": "foxglove-extension build",
+    "local-install": "foxglove-extension install",
+    "package": "foxglove-extension package"
+  },
+  "devDependencies": {
+    "@foxglove/extension": "~2.46.0",
+    "create-foxglove-extension": "^1.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.3.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
